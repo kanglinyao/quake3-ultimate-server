@@ -16,3 +16,21 @@ This project sets up a Dockerized Quake 3 server with CPMA and OSP mods, along w
 - Quake 3 base game files (`pak0.pk3`) and mission pack maps
 
 ## Directory Structure
+
+/project-directory
+├── backend
+│ ├── server.js
+│ ├── package.json
+├── frontend
+│ ├── index.html
+├── configs
+│ ├── osp-server.cfg
+│ ├── cpma-server.cfg
+├── quake3_files
+│ ├── baseq3
+│ │ ├── pak0.pk3
+│ ├── missionpack
+│ │ ├── map1.pk3
+│ │ ├── map2.pk3
+├── Dockerfile
+├── entrypoint.sh
