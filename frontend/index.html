@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quake 3 Server Control</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .container { max-width: 800px; margin: auto; padding: 20px; }
+    .server { margin-bottom: 20px; }
+    textarea { width: 100%; height: 100px; }
+    .map-list, .map-rotation { margin: 10px 0; }
+    .auth { margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Quake 3 Server Control</h1>
+    <div class="auth">
+      <h2>Register</h2>
+      <input type="text" id="register-username" placeholder="Username">
+      <input type="password" id="register-password" placeholder="Password">
+      <button onclick="register()">Register</button>
+      <h2>Login</h2>
+      <input type="text" id="login-username" placeholder="Username">
+      <input type="password" id="login-password" placeholder="Password">
+      <button onclick="login()">Login</button>
+      <div id="auth-status"></div>
+    </div>
+    <div class="server">
+      <h2>OSP Server</h2>
+      <div>
+        <button onclick="startServer('osp')">Start Server</button>
+        <button onclick="stopServer('osp')">Stop Server</button>
+      </div>
+      <textarea id="osp-command" placeholder="Enter RCON command"></textarea>
+      <button onclick="sendCommand('osp')">Send Command</button>
+      <pre id="osp-response"></pre>
+      <h3>Bot Controls</h3>
+      <input type="text" id="osp-bot-name" placeholder="Bot Name">
+      <input type="number" id="osp-bot-skill" placeholder="Skill Level" min="1" max="5">
+      <button onclick="addBot('osp')">Add Bot</button>
+      <button onclick="removeBot('osp')">Remove Bot</button>
+      <h3>Map List</h3>
+      <button onclick="getMapList('osp')">Refresh Map List</button>
+      <pre id="osp-map-list" class="map-list"></pre>
+      <h3>Map Rotation</h3>
+      <textarea id="osp-map-rotation" class="map-rotation" placeholder="Enter map names separated by commas"></textarea>
+      <button onclick="setMapRotation('osp')">Set Map Rotation</button>
+    </div>
+    <div class="server">
+      <h2>CPMA Server</h2>
+      <div>
+        <button onclick="startServer('cpma')">Start Server</button>
+        <button onclick="stopServer('cpma')">Stop Server</button>
+      </div>
+      <textarea id="cpma-command" placeholder="Enter RCON command"></textarea>
+      <button onclick="sendCommand('cpma')">Send Command</button>
+      <pre id="cpma-response"></pre>
+      <h3>Bot Controls</h3>
+      <input type="text" id="cpma-bot-name" placeholder="Bot Name">
+      <input type="number" id="cpma-bot-skill" placeholder="Skill Level" min="1" max="5">
+      <button onclick="addBot('cpma')">Add Bot</button>
+      <button onclick="removeBot('cpma')">Remove Bot</button>
+      <h3>Map List</h3>
+      <button onclick="getMapList('cpma')">Refresh Map List</button>
+      <pre id="cpma-map-list" class="map-list"></pre>
+      <h3>Map Rotation</h3>
+      <textarea id="cpma-map-rotation" class="map-rotation" placeholder="Enter map names separated by commas"></textarea>
+      <button onclick="setMapRotation('cpma')">Set Map Rotation</button>
+    </div>
+  </div>
+  <script>
+    let token = '';
+
+    async function register() {
+      const username = document.getElementById('register-username').value;
+      const password = document.getElementById('register-password').value;
+      try {
+        const response = await fetch('/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const text = await response.text();
+        document.getElementById('auth-status').textContent = text;
+      } catch (err) {
+        document.getElementById('auth-status').textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function login() {
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
+      try {
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await response.json();
+        token = data.token;
+        document.getElementById('auth-status').textContent = 'Logged in successfully';
+      } catch (err) {
+        document.getElementById('auth-status').textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function sendCommand(server) {
+      const command = document.getElementById(`${server}-command`).value;
+      const responseElement = document.getElementById(`${server}-response`);
+      try {
+        const response = await fetch(`/command/${server}`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ command })
+        });
+        const text = await response.text();
+        responseElement.textContent = text;
+      } catch (err) {
+        responseElement.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function startServer(server) {
+      try {
+        const response = await fetch(`/start/${server}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const text = await response.text();
+        alert(`Server started: ${text}`);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function stopServer(server) {
+      try {
+        const response = await fetch(`/stop/${server}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const text = await response.text();
+        alert(`Server stopped: ${text}`);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function addBot(server) {
+      const botName = document.getElementById(`${server}-bot-name`).value;
+      const skill = document.getElementById(`${server}-bot-skill`).value;
+      try {
+        const response = await fetch(`/bot/${server}/add`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ botName, skill })
+        });
+        const text = await response.text();
+        alert(`Bot added: ${text}`);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function removeBot(server) {
+      const botName = document.getElementById(`${server}-bot-name`).value;
+      try {
+        const response = await fetch(`/bot/${server}/remove`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ botName })
+        });
+        const text = await response.text();
+        alert(`Bot removed: ${text}`);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function getMapList(server) {
+      const mapListElement = document.getElementById(`${server}-map-list`);
+      try {
+        const response = await fetch(`/maps/${server}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const text = await response.text();
+        mapListElement.textContent = text;
+      } catch (err) {
+        mapListElement.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function setMapRotation(server) {
+      const mapRotation = document.getElementById(`${server}-map-rotation`).value.split(',').map(map => map.trim());
+      try {
+        const response = await fetch(`/rotation/${server}`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ maps: mapRotation })
+        });
+        const text = await response.text();
+        alert(`Map rotation set: ${text}`);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

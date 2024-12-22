@@ -1,0 +1,15 @@
+{
+    "name": "quake3-server-control",
+    "version": "1.0.0",
+    "description": "Web application to control CPMA and OSP servers",
+    "main": "server.js",
+    "scripts": {
+      "start": "node server.js"
+    },
+    "dependencies": {
+      "bcrypt": "^5.0.1",
+      "express": "^4.17.1",
+      "jsonwebtoken": "^8.5.1",
+      "rcon": "^0.7.1"
+    }
+  }
